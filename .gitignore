@@ -37,3 +37,7 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Local project instructions and documentation (keep README versioned)
+*.md
+!README.md
