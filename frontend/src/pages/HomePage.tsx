@@ -1,5 +1,6 @@
 import { Icon } from '../components/Icon';
 import { HealthPanel } from '../features/health/HealthPanel';
+import { SiteHeader } from '../components/SiteHeader';
 
 const resources = [
   { number: '01', icon: 'room', title: 'Săli de studiu', description: 'Un loc liniștit pentru concentrare, lucru în echipă și idei noi.' },
@@ -11,10 +12,7 @@ export function HomePage() {
   return (
     <div className="page-shell">
       <a href="#main" className="skip-link">Sari la conținut</a>
-      <header className="site-header">
-        <a href="#" aria-label="SpaceShare — acasă" className="flex items-center gap-3 text-xl font-semibold tracking-tight text-forest"><span className="brand-mark"><span /><span /></span>SpaceShare<span className="text-lime">.</span></a>
-        <nav aria-label="Navigare principală" className="flex items-center gap-7 text-sm"><a href="#about" className="nav-link hidden sm:block">Despre proiect</a><a href="#connection" className="nav-link flex items-center gap-2">Verifică conexiunea <Icon name="arrow" className="size-4" /></a></nav>
-      </header>
+      <SiteHeader />
       <main id="main">
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
@@ -22,7 +20,7 @@ export function HomePage() {
             <h1 id="hero-title">Spațiu pentru<br />ideile <span className="italic font-normal">tale.</span></h1>
             <p className="hero-description">Locul în care resursele comune devin mai ușor de găsit și de folosit. Construim o experiență simplă pentru comunitatea universitară.</p>
             <a href="#connection" className="primary-button">Verifică aplicația <Icon name="arrow" className="size-5" /></a>
-            <div className="mt-8 flex items-center gap-2 text-xs text-stone-500"><span className="size-1.5 rounded-full bg-stone-400" /> Proiect în dezvoltare <span className="mx-1 text-stone-300">/</span> Etapa 01 · Fundația</div>
+            <div className="mt-8 flex items-center gap-2 text-xs text-stone-500"><span className="size-1.5 rounded-full bg-stone-400" /> Proiect în dezvoltare <span className="mx-1 text-stone-300">/</span> Etapa 03 · Conturi și profil</div>
           </div>
           <div className="space-art" role="img" aria-label="Ilustrație geometrică a unui spațiu comun, cu o masă, scaune și o fereastră">
             <div className="art-grid" /><div className="art-window"><span /><span /><span /><span /></div>

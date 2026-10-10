@@ -2,6 +2,7 @@ import { pathToFileURL } from 'node:url';
 import type { PrismaClient } from '../generated/prisma/client.js';
 import { createDatabaseClient } from '../src/db/client.js';
 import { demoResources } from './seed-data.js';
+import { seedAdmin } from './seed-admin.js';
 
 export async function seedDatabase(client: PrismaClient) {
   await client.$transaction(async (transaction) => {
@@ -28,6 +29,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const client = createDatabaseClient();
   try {
     await seedDatabase(client);
+    await seedAdmin(client);
     console.log('Date demonstrative pregatite: 4 categorii si 4 resurse.');
   } catch (error: unknown) {
     console.error('Seed esuat:', error instanceof Error ? error.message : 'Eroare necunoscuta.');

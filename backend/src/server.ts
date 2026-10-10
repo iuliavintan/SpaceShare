@@ -1,11 +1,11 @@
-import { app } from './app.js';
+import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { prisma } from './db/client.js';
 
 // Fail early if the database has not been migrated or cannot be opened.
 await prisma.user.count();
 
-const server = app.listen(env.port, '127.0.0.1', () => {
+const server = createApp().listen(env.port, '127.0.0.1', () => {
   console.log(`SpaceShare API: http://127.0.0.1:${env.port}`);
 });
 

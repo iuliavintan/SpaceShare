@@ -25,3 +25,4 @@ export function resolveDatabaseUrl(value: string): string {
 }
 
 export const databaseUrl = resolveDatabaseUrl(process.env.DATABASE_URL ?? 'file:./dev.db');
+export { backendDirectory };
