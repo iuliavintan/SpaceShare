@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './database.js';
 
 const portValue = process.env.PORT ?? '3000';
 if (!/^\d+$/.test(portValue)) {

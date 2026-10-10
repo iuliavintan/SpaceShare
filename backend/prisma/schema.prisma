@@ -1,13 +1,140 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider            = "prisma-client"
+  output              = "../generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
 }
 
 datasource db {
   provider = "sqlite"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum NotificationType {
+  BOOKING_APPROVED
+  BOOKING_REJECTED
+  BOOKING_CANCELLED
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  role          Role           @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  bookings      Booking[]      @relation("BookingOwner")
+  decisions     Booking[]      @relation("BookingDecision")
+  notifications Notification[]
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  resources Resource[]
+}
+
+model Resource {
+  id               String          @id @default(cuid())
+  categoryId       String
+  name             String
+  description      String
+  location         String
+  capacity         Int
+  facilities       Json            @default("[]")
+  isActive         Boolean         @default(true)
+  requiresApproval Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  category         Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  bookings         Booking[]
+  availability     Availability[]
+  images           ResourceImage[]
+  blocks           ResourceBlock[]
+
+  @@index([categoryId, isActive])
+}
+
+model Booking {
+  id            String         @id @default(cuid())
+  userId        String
+  resourceId    String
+  startAt       DateTime
+  endAt         DateTime
+  status        BookingStatus  @default(PENDING)
+  reason        String?
+  decidedById   String?
+  decidedAt     DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation("BookingOwner", fields: [userId], references: [id], onDelete: Restrict)
+  resource      Resource       @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+  decidedBy     User?          @relation("BookingDecision", fields: [decidedById], references: [id], onDelete: Restrict)
+  notifications Notification[]
+
+  @@index([resourceId, status, startAt, endAt])
+  @@index([userId, startAt])
+}
+
+// ISO weekday: Monday=1 ... Sunday=7. Times are minutes from local midnight.
+// The organization timezone is Europe/Bucharest; overnight windows use two rows.
+model Availability {
+  id          String   @id @default(cuid())
+  resourceId  String
+  dayOfWeek   Int
+  startMinute Int
+  endMinute   Int
+  resource    Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceId, dayOfWeek, startMinute, endMinute])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  bookingId String?
+  type      NotificationType
+  message   String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking   Booking?         @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([userId, readAt, createdAt])
+  @@index([bookingId])
+}
+
+model ResourceImage {
+  id         String   @id @default(cuid())
+  resourceId String
+  path       String
+  altText    String
+  position   Int      @default(0)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId, position])
+}
+
+model ResourceBlock {
+  id         String   @id @default(cuid())
+  resourceId String
+  startAt    DateTime
+  endAt      DateTime
+  reason     String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId, startAt, endAt])
 }
