@@ -15,7 +15,7 @@
     "db:migrate": "tsx prisma/prepare.ts && prisma migrate deploy --config prisma7.config.ts",
     "db:seed": "prisma db seed --config prisma7.config.ts",
     "db:setup": "npm run db:generate && npm run db:migrate && npm run db:seed",
-    "db:studio": "prisma studio --config prisma7.config.ts",
+    "db:studio": "tsx scripts/studio.ts",
     "pretest": "npm run db:generate",
     "test": "tsx --test tests/*.test.ts"
   },
