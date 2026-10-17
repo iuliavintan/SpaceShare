@@ -7,7 +7,10 @@ import { ProfilePage } from '../pages/ProfilePage';
 function Pages() {
   const [path, setPath] = useState(window.location.hash);
   useEffect(() => {
-    const navigate = () => setPath(window.location.hash);
+    const navigate = () => {
+      setPath(window.location.hash);
+      window.scrollTo(0, 0);
+    };
     window.addEventListener('hashchange', navigate);
     return () => window.removeEventListener('hashchange', navigate);
   }, []);

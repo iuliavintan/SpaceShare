@@ -1,44 +1,47 @@
-import { Icon } from '../components/Icon';
+﻿import { Icon } from '../components/Icon';
+import { SiteLayout } from '../components/SiteLayout';
+import { StudyFloorPlan } from '../components/StudyFloorPlan';
+import { useAuth } from '../features/auth/AuthProvider';
 import { HealthPanel } from '../features/health/HealthPanel';
-import { SiteHeader } from '../components/SiteHeader';
 
 const resources = [
-  { number: '01', icon: 'room', title: 'Săli de studiu', description: 'Un loc liniștit pentru concentrare, lucru în echipă și idei noi.' },
-  { number: '02', icon: 'lab', title: 'Laboratoare', description: 'Spații dedicate experimentelor și proiectelor care prind contur.' },
-  { number: '03', icon: 'screen', title: 'Echipamente', description: 'Instrumentele potrivite, împărțite cu întreaga comunitate.' },
+  { number: '01', icon: 'room', title: 'Săli de studiu', description: 'Pentru concentrare și proiecte de grup.' },
+  { number: '02', icon: 'lab', title: 'Laboratoare', description: 'Locul în care ideile devin experimente.' },
+  { number: '03', icon: 'screen', title: 'Echipamente', description: 'Instrumente pe care le folosim împreună.' },
 ] as const;
 
 export function HomePage() {
+  const { user } = useAuth();
   return (
-    <div className="page-shell">
-      <a href="#main" className="skip-link">Sari la conținut</a>
-      <SiteHeader />
-      <main id="main">
-        <section className="hero" aria-labelledby="hero-title">
-          <div className="hero-copy">
-            <div className="eyebrow"><span className="size-1.5 rounded-full bg-forest" /> SPAȚII COMUNE. POSIBILITĂȚI NOI.</div>
-            <h1 id="hero-title">Spațiu pentru<br />ideile <span className="italic font-normal">tale.</span></h1>
-            <p className="hero-description">Locul în care resursele comune devin mai ușor de găsit și de folosit. Construim o experiență simplă pentru comunitatea universitară.</p>
-            <a href="#connection" className="primary-button">Verifică aplicația <Icon name="arrow" className="size-5" /></a>
-            <div className="mt-8 flex items-center gap-2 text-xs text-stone-500"><span className="size-1.5 rounded-full bg-stone-400" /> Proiect în dezvoltare <span className="mx-1 text-stone-300">/</span> Etapa 03 · Conturi și profil</div>
-          </div>
-          <div className="space-art" role="img" aria-label="Ilustrație geometrică a unui spațiu comun, cu o masă, scaune și o fereastră">
-            <div className="art-grid" /><div className="art-window"><span /><span /><span /><span /></div>
-            <div className="art-sun" /><div className="art-floor" /><div className="art-rug" />
-            <div className="art-table"><span className="table-top" /><span className="table-leg one" /><span className="table-leg two" /><span className="table-book" /></div>
-            <div className="art-chair chair-one"><span /><i /></div><div className="art-chair chair-two"><span /><i /></div>
-            <div className="art-plant"><span /><span /><span /><i /></div>
-            <div className="art-label"><span className="size-2 rounded-full bg-lime" /> Mai bine, împreună.</div>
-            <span className="art-caption">THE SHARED SPACE / 01</span>
-          </div>
-        </section>
-        <section id="about" className="about-section scroll-mt-8" aria-labelledby="about-title">
-          <div className="section-heading"><div><p className="eyebrow mb-3">O COMUNITATE. MAI MULTE RESURSE.</p><h2 id="about-title">Un singur loc pentru ce ai nevoie.</h2></div><p className="max-w-xs text-sm leading-6 text-stone-500">În etapele următoare, vei putea explora și rezerva resursele organizației tale.</p></div>
-          <div className="resource-grid">{resources.map((resource) => <article key={resource.number} className="resource-card"><div className="flex items-center justify-between"><Icon name={resource.icon} className="size-7 text-forest" /><span className="font-mono text-xs text-stone-400">/{resource.number}</span></div><h3 className="mt-7 text-lg font-semibold tracking-tight text-forest">{resource.title}</h3><p className="mt-2 text-sm leading-6 text-stone-500">{resource.description}</p></article>)}</div>
-        </section>
-        <HealthPanel />
-      </main>
-      <footer className="site-footer"><p>SpaceShare <span className="text-stone-300 mx-2">/</span> Spațiile ne aduc împreună.</p><span>Proiect universitar · Dezvoltat local</span></footer>
-    </div>
+    <SiteLayout>
+      <section className="hero" aria-labelledby="hero-title">
+        <div className="hero-copy">
+          <p className="eyebrow">PENTRU COMUNITATEA UNIVERSITARĂ</p>
+          <h1 id="hero-title">Un loc bun<br />pentru <em>ce urmează.</em></h1>
+          <p className="hero-description">Spațiile în care învățăm, lucrăm și construim împreună merită să fie mai ușor de găsit.</p>
+          <a className="primary-button" href={user ? '#/profile' : '#/register'}>
+            {user ? 'Vezi profilul meu' : 'Fă parte din comunitate'} <span aria-hidden="true">↗</span>
+          </a>
+          <p className="small-note">Săli, laboratoare și echipamente. În curând, într-un singur loc.</p>
+        </div>
+        <StudyFloorPlan />
+      </section>
+      <section className="resources-section" aria-labelledby="resources-title">
+        <div>
+          <p className="eyebrow">RESURSE COMUNE</p>
+          <h2 id="resources-title">Mai mult loc.<br />Mai multe posibilități.</h2>
+        </div>
+        <div className="resource-list">
+          {resources.map((resource) => (
+            <article key={resource.number} className="resource-row">
+              <span className="resource-number">{resource.number}</span>
+              <div><h3>{resource.title}</h3><p>{resource.description}</p></div>
+              <Icon name={resource.icon} className="size-6 shrink-0" />
+            </article>
+          ))}
+        </div>
+      </section>
+      <HealthPanel />
+    </SiteLayout>
   );
 }
