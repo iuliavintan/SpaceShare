@@ -34,6 +34,7 @@ export function SiteHeader() {
           {loading ? <span className="session-status" role="status">Se verifică sesiunea…</span> : user ? (
             <>
               <a href="#/resources">Resurse</a>
+              <a href="#/bookings">Rezervări</a>
               {user.role === 'ADMIN' && <a href="#/admin/resources">Administrare</a>}
               <a href="#/profile">Profilul meu</a>
               <button type="button" className="text-button" disabled={busy} onClick={logout}>

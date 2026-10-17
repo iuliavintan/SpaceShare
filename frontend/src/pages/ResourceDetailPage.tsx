@@ -7,6 +7,7 @@ import { ResourceForm } from '../features/resources/ResourceForm';
 import { AvailabilityEditor } from '../features/resources/AvailabilityEditor';
 import { BlocksEditor } from '../features/resources/BlocksEditor';
 import { formatDateTime, formatMinute, weekdays } from '../features/resources/resource-time';
+import { BookingForm } from '../features/bookings/BookingForm';
 
 export function ResourceDetailPage({ id, manage = false }: { id: string; manage?: boolean }) {
   const load = useCallback((signal: AbortSignal) => resourcesApi.detail(id, signal), [id]);
@@ -31,6 +32,7 @@ export function ResourceDetailPage({ id, manage = false }: { id: string; manage?
       </> : <>
         <section className="resource-description" aria-labelledby="description-title"><h2 id="description-title">Despre resursă</h2><p>{resource.description}</p><h3>Facilități</h3>{resource.facilities.length ? <ul className="facilities-list">{resource.facilities.map((facility) => <li key={facility}>{facility}</li>)}</ul> : <p className="small-note">Nu sunt specificate facilități.</p>}</section>
         <div className="resource-detail-columns"><section className="management-section" aria-labelledby="schedule-title"><p className="eyebrow">EUROPE/BUCHAREST</p><h2 id="schedule-title">Program de funcționare</h2><dl className="weekly-schedule">{weekdays.map((day, index) => <div key={day}><dt>{day}</dt><dd>{resource.availability.filter((window) => window.dayOfWeek === index + 1).map((window) => `${formatMinute(window.startMinute)}–${formatMinute(window.endMinute)}`).join(', ') || 'Închis'}</dd></div>)}</dl></section><section className="management-section" aria-labelledby="unavailable-title"><p className="eyebrow">EXCEPȚII DE LA PROGRAM</p><h2 id="unavailable-title">Perioade de indisponibilitate</h2>{resource.blocks.length ? <ul className="block-list">{resource.blocks.map((block) => <li key={block.id}><div><strong>{block.reason}</strong><p>{formatDateTime(block.startAt)} — {formatDateTime(block.endAt)}</p></div></li>)}</ul> : <p className="small-note mt-5">Nu există blocări înregistrate.</p>}</section></div>
+        {user?.role === 'USER' && resource.isActive && <BookingForm resourceId={resource.id} requiresApproval={resource.requiresApproval} />}
       </>}
     </>}
   </SiteLayout>;

@@ -226,6 +226,27 @@ a, button { transition: color .2s, background-color .2s, border-color .2s; }
 .block-list strong { font-weight: 500; overflow-wrap: anywhere; }
 .block-list p { color: var(--color-muted); font-size: 11px; line-height: 1.8; margin-top: 7px; }
 .block-list button { font-size: 11px; flex-shrink: 0; }
+.booking-form { margin-top: 38px; border-top: 1px solid var(--color-line); }
+.booking-form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.booking-status-filter { max-width: 300px; margin: 25px 0; }
+.booking-status-filter select { width: 100%; margin-top: 9px; padding: 12px 13px; border: 1px solid var(--color-line); background: var(--color-paper); color: var(--color-ink); }
+.booking-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: start; gap: 24px; padding: 25px 0; border-top: 1px solid var(--color-line); }
+.booking-row-main { min-width: 0; }
+.booking-row-title { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+.booking-row-title h2 { margin-top: 7px; font: 400 24px/1.25 var(--font-serif); overflow-wrap: anywhere; }
+.booking-row-title h2 a:hover { color: var(--color-accent); }
+.booking-status { flex-shrink: 0; border: 1px solid var(--color-line); padding: 6px 9px; font-size: 10px; }
+.status-pending { color: #805d17; border-color: #c5ad71; background: #f5eedb; }
+.status-approved, .status-completed { color: #245d3b; border-color: #a9c5ad; background: #edf5eb; }
+.status-rejected, .status-cancelled { color: #815348; border-color: #d8afa5; background: #f8eeeb; }
+.booking-date { margin-top: 12px; font-size: 12px; }
+.booking-reason { margin-top: 8px; color: var(--color-muted); font-size: 11px; line-height: 1.7; }
+.booking-actions { display: flex; flex-wrap: wrap; justify-content: end; align-items: center; gap: 14px; padding-top: 16px; font-size: 11px; }
+@media (max-width: 760px) {
+  .booking-row { grid-template-columns: 24px minmax(0, 1fr); gap: 13px; }
+  .booking-row-title { flex-direction: column; }
+  .booking-actions { grid-column: 2; justify-content: start; padding-top: 0; }
+}
 @media (max-width: 950px) { .resource-filters { grid-template-columns: 1fr 1fr; }.availability-row { grid-template-columns: 1fr 1fr; }.availability-row > button { justify-self: start; }.category-editor { grid-template-columns: 1fr; gap: 25px; } }
 @media (max-width: 760px) {
   .catalog-page { padding-top: 30px; }

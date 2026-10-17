@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from '../../../generated/prisma/client.js';
 import { HttpError } from '../../shared/http-error.js';
 import type { ResourceFilters, resourceInput, availabilityInput, blockInput } from './resources.validation.js';
+import { databaseTransaction } from '../../db/transaction.js';
 
 export function resourcesService(client: PrismaClient) {
   return {
@@ -33,7 +34,7 @@ export function resourcesService(client: PrismaClient) {
       return client.resource.update({ where: { id }, data, include: { category: true } });
     },
     async replaceAvailability(resourceId: string, windows: ReturnType<typeof availabilityInput>) {
-      return client.$transaction(async (transaction) => {
+      return databaseTransaction(client, async (transaction) => {
         if (!await transaction.resource.findUnique({ where: { id: resourceId } })) throw new HttpError(404, 'Resursa nu exista.');
         // Until booking policies are implemented, preserve schedules used by active bookings.
         const count = await transaction.booking.count({ where: { resourceId, status: { in: ['PENDING', 'APPROVED'] }, endAt: { gt: new Date() } } });
@@ -44,7 +45,7 @@ export function resourcesService(client: PrismaClient) {
       });
     },
     async createBlock(resourceId: string, data: ReturnType<typeof blockInput>) {
-      return client.$transaction(async (transaction) => {
+      return databaseTransaction(client, async (transaction) => {
         if (!await transaction.resource.findUnique({ where: { id: resourceId } })) throw new HttpError(404, 'Resursa nu exista.');
         const overlap = { resourceId, startAt: { lt: data.endAt }, endAt: { gt: data.startAt } };
         if (await transaction.booking.count({ where: { ...overlap, status: { in: ['PENDING', 'APPROVED'] } } })) throw new HttpError(409, 'Blocarea se suprapune unei rezervari active.');

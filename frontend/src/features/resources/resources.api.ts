@@ -1,14 +1,7 @@
 import { request } from '../../lib/http';
 import type { AvailabilityWindow, Category, Resource, ResourceBlock, ResourceDetail, ResourceFilters, ResourceInput, ResourceList } from './resources.types';
 
-function object(value: unknown): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error('Răspuns de resurse invalid.');
-  return value as Record<string, unknown>;
-}
-function string(value: unknown): string { if (typeof value !== 'string') throw new Error('Text invalid în răspuns.'); return value; }
-function number(value: unknown): number { if (typeof value !== 'number' || !Number.isInteger(value)) throw new Error('Număr invalid în răspuns.'); return value; }
-function boolean(value: unknown): boolean { if (typeof value !== 'boolean') throw new Error('Valoare invalidă în răspuns.'); return value; }
-function array<T>(value: unknown, read: (value: unknown) => T): T[] { if (!Array.isArray(value)) throw new Error('Listă invalidă în răspuns.'); return value.map(read); }
+import { readObject as object, readString as string, readInteger as number, readBoolean as boolean, readArray as array } from '../../lib/api-values';
 function category(value: unknown): Category { const row = object(value); return { id: string(row.id), name: string(row.name) }; }
 function resource(value: unknown): Resource {
   const row = object(value);

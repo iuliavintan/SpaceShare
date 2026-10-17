@@ -1,5 +1,6 @@
 import { HttpError } from '../../shared/http-error.js';
 import { objectInput, textInput } from '../../shared/validation.js';
+import { dateInput } from '../../shared/date-input.js';
 
 function integerInput(value: unknown, label: string, minimum = 1, maximum = 100000): number {
   if (typeof value !== 'number' || !Number.isInteger(value) || value < minimum || value > maximum) throw new HttpError(400, `${label}: numar intreg intre ${minimum} si ${maximum}.`);
@@ -80,16 +81,6 @@ export function availabilityInput(value: unknown) {
     if (previous.dayOfWeek === current.dayOfWeek && previous.endMinute > current.startMinute) throw new HttpError(400, 'Intervalele programului nu se pot suprapune.');
   }
   return windows;
-}
-
-function dateInput(value: unknown): Date {
-  if (typeof value !== 'string') throw new HttpError(400, 'Data si fusul orar sunt obligatorii.');
-  const match = /^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.exec(value);
-  const date = new Date(value);
-  const year = Number(match?.[1]), month = Number(match?.[2]), day = Number(match?.[3]);
-  const calendarDate = new Date(Date.UTC(year, month - 1, day));
-  if (!match || !Number.isFinite(date.getTime()) || calendarDate.getUTCFullYear() !== year || calendarDate.getUTCMonth() !== month - 1 || calendarDate.getUTCDate() !== day) throw new HttpError(400, 'Data trebuie sa fie ISO valida, cu fus orar explicit.');
-  return date;
 }
 
 export function blockInput(value: unknown) {

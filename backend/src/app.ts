@@ -11,8 +11,9 @@ import { createUsersRouter } from './modules/users/users.routes.js';
 import { authenticate } from './middleware/authenticate.js';
 import { createResourcesRouter } from './modules/resources/resources.routes.js';
 import { createCategoriesRouter } from './modules/categories/categories.routes.js';
+import { createBookingsRouter, createBookingAvailabilityRouter } from './modules/bookings/bookings.routes.js';
 
-export function createApp(client: PrismaClient = prisma, config: AuthConfig = getAuthConfig()) {
+export function createApp(client: PrismaClient = prisma, config: AuthConfig = getAuthConfig(), clock: () => Date = () => new Date()) {
   const app = express();
   app.disable('x-powered-by');
   app.use('/api', (_request, response, next) => {
@@ -25,8 +26,9 @@ export function createApp(client: PrismaClient = prisma, config: AuthConfig = ge
   const auth = createAuthRouter(client, config);
   app.use('/api/auth', auth.router);
   app.use('/api/users', createUsersRouter(client, auth.service, config));
-  app.use('/api/resources', authenticate(auth.service, config), createResourcesRouter(client));
+  app.use('/api/resources', authenticate(auth.service, config), createResourcesRouter(client), createBookingAvailabilityRouter(client, clock));
   app.use('/api/categories', authenticate(auth.service, config), createCategoriesRouter(client));
+  app.use('/api/bookings', authenticate(auth.service, config), createBookingsRouter(client, clock));
   app.use((_request, response) => {
     response.status(404).json({ error: 'Ruta nu exista.' });
   });

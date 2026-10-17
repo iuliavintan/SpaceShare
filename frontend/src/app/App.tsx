@@ -7,6 +7,7 @@ import { RequireAccess } from '../components/RequireAccess';
 import { ResourcesPage } from '../pages/ResourcesPage';
 import { ResourceDetailPage } from '../pages/ResourceDetailPage';
 import { NewResourcePage } from '../pages/NewResourcePage';
+import { BookingsPage } from '../pages/BookingsPage';
 
 function Pages() {
   const [path, setPath] = useState(window.location.hash);
@@ -21,6 +22,7 @@ function Pages() {
   if (path === '#/login') return <AuthPage key="login" mode="login" />;
   if (path === '#/register') return <AuthPage key="register" mode="register" />;
   if (path === '#/profile') return <ProfilePage />;
+  if (path === '#/bookings') return <RequireAccess><BookingsPage /></RequireAccess>;
   if (path === '#/resources') return <RequireAccess><ResourcesPage key="catalog" /></RequireAccess>;
   if (path === '#/admin/resources') return <RequireAccess admin><ResourcesPage key="admin-catalog" manage /></RequireAccess>;
   if (path === '#/admin/resources/new') return <RequireAccess admin><NewResourcePage /></RequireAccess>;

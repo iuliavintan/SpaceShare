@@ -35,6 +35,6 @@ npm run dev
 
 Open **http://127.0.0.1:5173**. The backend runs on port **3000** and prepares the local database and demo resources before starting. On Windows, use `npm.cmd` if PowerShell blocks `npm`.
 
-You can create an account, edit your profile and browse the resource catalogue. Administrators can manage categories, resources, opening hours and maintenance blocks. Bookings and the calendar are planned for the next stages.
+You can create an account, edit your profile, browse resources and make or manage bookings. Administrators can manage resources and review booking requests. The calendar is planned for a later stage.
 
 For a demo administrator, set `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in `backend/.env` before starting. Use an email that is not already registered. The JWT secret is generated locally on first startup.
