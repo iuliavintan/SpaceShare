@@ -8,6 +8,9 @@ import { prisma } from './db/client.js';
 import { csrfProtection } from './middleware/csrf.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { createUsersRouter } from './modules/users/users.routes.js';
+import { authenticate } from './middleware/authenticate.js';
+import { createResourcesRouter } from './modules/resources/resources.routes.js';
+import { createCategoriesRouter } from './modules/categories/categories.routes.js';
 
 export function createApp(client: PrismaClient = prisma, config: AuthConfig = getAuthConfig()) {
   const app = express();
@@ -22,6 +25,8 @@ export function createApp(client: PrismaClient = prisma, config: AuthConfig = ge
   const auth = createAuthRouter(client, config);
   app.use('/api/auth', auth.router);
   app.use('/api/users', createUsersRouter(client, auth.service, config));
+  app.use('/api/resources', authenticate(auth.service, config), createResourcesRouter(client));
+  app.use('/api/categories', authenticate(auth.service, config), createCategoriesRouter(client));
   app.use((_request, response) => {
     response.status(404).json({ error: 'Ruta nu exista.' });
   });

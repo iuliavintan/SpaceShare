@@ -33,6 +33,8 @@ export function SiteHeader() {
         <nav aria-label="Navigare principală" className="account-links">
           {loading ? <span className="session-status" role="status">Se verifică sesiunea…</span> : user ? (
             <>
+              <a href="#/resources">Resurse</a>
+              {user.role === 'ADMIN' && <a href="#/admin/resources">Administrare</a>}
               <a href="#/profile">Profilul meu</a>
               <button type="button" className="text-button" disabled={busy} onClick={logout}>
                 {busy ? 'Se deconectează…' : 'Deconectare'} <span aria-hidden="true">↗</span>

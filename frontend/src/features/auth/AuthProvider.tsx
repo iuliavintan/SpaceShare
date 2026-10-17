@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { ApiError, authApi } from './auth.api';
 import type { AuthUser } from './auth.types';
 
@@ -17,6 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
+  const updateUser = useCallback((value: AuthUser | null) => { setUser(value); setError(''); }, []);
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
@@ -29,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; controller.abort(); };
   }, [attempt]);
-  return <AuthContext.Provider value={{ user, loading, error, setUser: (value) => { setUser(value); setError(''); }, retry: () => setAttempt((value) => value + 1) }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, error, setUser: updateUser, retry: () => setAttempt((value) => value + 1) }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
