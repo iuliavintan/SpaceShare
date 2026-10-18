@@ -4,6 +4,7 @@ import type { PublicUser } from '../users/user.types.js';
 import type { bookingFilters, bookingInput } from './bookings.validation.js';
 import { availabilityResult } from './availability.js';
 import { databaseTransaction } from '../../db/transaction.js';
+import { settleBookings } from './booking-lifecycle.js';
 
 const include = {
   resource: { select: { id: true, name: true, location: true, isActive: true } },
@@ -12,13 +13,6 @@ const include = {
 } as const;
 
 export type BookingAction = 'approve' | 'reject' | 'cancel';
-
-// Local application: settle elapsed records when the booking API is used.
-// No background service or manual status endpoint is needed.
-async function settleBookings(transaction: Prisma.TransactionClient, now: Date) {
-  await transaction.booking.updateMany({ where: { status: 'APPROVED', endAt: { lte: now } }, data: { status: 'COMPLETED' } });
-  await transaction.booking.updateMany({ where: { status: 'PENDING', startAt: { lte: now } }, data: { status: 'REJECTED', decidedAt: now, decidedById: null } });
-}
 
 export function bookingsService(client: PrismaClient, clock: () => Date) {
   return {
@@ -39,10 +33,20 @@ export function bookingsService(client: PrismaClient, clock: () => Date) {
             if (!result.available) throw new HttpError(409, result.message);
           }
         }
-        return transaction.booking.update({
+        const updated = await transaction.booking.update({
           where: { id, status: booking.status },
           data: { status: action === 'approve' ? 'APPROVED' : action === 'reject' ? 'REJECTED' : 'CANCELLED', decidedAt: now, decidedById: user.id }, include,
         });
+        const type = action === 'approve' ? 'BOOKING_APPROVED' : action === 'reject' ? 'BOOKING_REJECTED' : user.role === 'ADMIN' ? 'BOOKING_CANCELLED' : null;
+        if (type) {
+          const message = type === 'BOOKING_APPROVED'
+            ? `Rezervarea ta pentru „${updated.resource.name}” a fost aprobată.`
+            : type === 'BOOKING_REJECTED'
+              ? `Cererea ta pentru „${updated.resource.name}” a fost respinsă.`
+              : `Rezervarea ta pentru „${updated.resource.name}” a fost anulată de administrator.`;
+          await transaction.notification.create({ data: { userId: booking.userId, bookingId: booking.id, type, message, createdAt: now } });
+        }
+        return updated;
       });
     },
     async create(user: PublicUser, data: ReturnType<typeof bookingInput>) {

@@ -73,6 +73,60 @@ test('booking API', async (suite) => {
       assert.equal((await call('/bookings?scope=all', 'GET', undefined, user)).status, 403);
       assert.equal((await call('/bookings?scope=all', 'GET', undefined, admin)).status, 200);
     });
+    await suite.test('dashboard returns role-specific records and statistics', async () => {
+      const ownBooking = (await (await call('/bookings', 'POST', { ...input, resourceId: 'demo-lab', startAt: '2030-02-04T08:00:00Z', endAt: '2030-02-04T09:00:00Z' }, user)).json()).booking;
+      const adminDashboardResponse = await call('/dashboard', 'GET', undefined, admin);
+      assert.equal(adminDashboardResponse.status, 200);
+      const adminDashboard = await adminDashboardResponse.json();
+      assert.equal(adminDashboard.role, 'ADMIN');
+      assert.ok(adminDashboard.statistics.resources.total > 0);
+      assert.ok(adminDashboard.statistics.bookings.total > 0);
+      assert.ok(adminDashboard.pendingBookings.some((booking: { id: string }) => booking.id === ownBooking.id));
+
+      const userDashboardResponse = await call('/dashboard', 'GET', undefined, user);
+      assert.equal(userDashboardResponse.status, 200);
+      const userDashboard = await userDashboardResponse.json();
+      assert.equal(userDashboard.role, 'USER');
+      assert.ok(userDashboard.upcomingBookings.some((booking: { id: string }) => booking.id === ownBooking.id));
+      assert.equal(userDashboard.pendingBookings, undefined);
+      assert.equal((await call('/dashboard')).status, 401);
+    });
+    await suite.test('notifications are private, persistent and can be marked read only by their owner', async () => {
+      const created = await call('/bookings', 'POST', { ...input, resourceId: 'demo-lab', startAt: '2030-02-05T08:00:00Z', endAt: '2030-02-05T09:00:00Z' }, user);
+      const { booking } = await created.json();
+      assert.equal((await call(`/bookings/${booking.id}/reject`, 'POST', {}, admin)).status, 200);
+
+      const response = await call('/notifications', 'GET', undefined, user);
+      assert.equal(response.status, 200);
+      const list = await response.json();
+      assert.equal(list.unreadCount, 1);
+      assert.equal(list.notifications.length, 1);
+      assert.equal(list.notifications[0].type, 'BOOKING_REJECTED');
+      assert.equal(list.notifications[0].bookingId, booking.id);
+      assert.equal((await call('/notifications', 'GET', undefined, stranger)).status, 200);
+      assert.equal((await (await call('/notifications', 'GET', undefined, stranger)).json()).notifications.length, 0);
+      assert.equal((await call('/notifications')).status, 401);
+      assert.equal((await call(`/notifications/${list.notifications[0].id}/read`, 'PATCH', {}, stranger)).status, 404);
+      const marked = await call(`/notifications/${list.notifications[0].id}/read`, 'PATCH', {}, user);
+      assert.equal(marked.status, 200);
+      assert.ok((await marked.json()).notification.readAt);
+      assert.equal((await (await call('/notifications', 'GET', undefined, user)).json()).unreadCount, 0);
+    });
+    await suite.test('approval and admin cancellation notify the owner, while own cancellation does not', async () => {
+      const makePending = async (day: string) => {
+        const response = await call('/bookings', 'POST', { ...input, resourceId: 'demo-lab', startAt: `2030-02-${day}T08:00:00Z`, endAt: `2030-02-${day}T09:00:00Z` }, user);
+        assert.equal(response.status, 201);
+        return (await response.json()).booking;
+      };
+      const approved = await makePending('06');
+      assert.equal((await call(`/bookings/${approved.id}/approve`, 'POST', {}, admin)).status, 200);
+      const ownerCancelled = await makePending('07');
+      assert.equal((await call(`/bookings/${ownerCancelled.id}/cancel`, 'POST', {}, admin)).status, 200);
+      const selfCancelled = await makePending('08');
+      assert.equal((await call(`/bookings/${selfCancelled.id}/cancel`, 'POST', {}, user)).status, 200);
+      const notifications = await (await call('/notifications', 'GET', undefined, user)).json();
+      assert.deepEqual(notifications.notifications.map((item: { type: string }) => item.type).sort(), ['BOOKING_APPROVED', 'BOOKING_CANCELLED', 'BOOKING_REJECTED']);
+    });
     await suite.test('availability respects opening hours, pending requests and maintenance without exposing owners', async () => {
       const check = (resourceId: string, startAt: string, endAt: string) => call(`/resources/${resourceId}/availability?${new URLSearchParams({ startAt, endAt })}`, 'GET', undefined, stranger);
       assert.equal((await call('/bookings', 'POST', input, user)).status, 409);
@@ -204,6 +258,8 @@ test('booking API', async (suite) => {
       const expired = await (await call(`/bookings/${pending.id}`, 'GET', undefined, user)).json();
       assert.equal(expired.booking.status, 'REJECTED');
       assert.equal(expired.booking.decidedBy, null);
+      const expiryNotice = await (await call('/notifications', 'GET', undefined, user)).json();
+      assert.ok(expiryNotice.notifications.some((notification: { bookingId: string; type: string }) => notification.bookingId === pending.id && notification.type === 'BOOKING_REJECTED'));
       assert.equal((await call(`/bookings/${pending.id}/approve`, 'POST', {}, admin)).status, 409);
       assert.equal((await call(`/bookings/${approved.id}/cancel`, 'POST', {}, admin)).status, 200);
       const future = { ...data, startAt: '2030-01-18T09:00:00Z', endAt: '2030-01-18T10:00:00Z' };

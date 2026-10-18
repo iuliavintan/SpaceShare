@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../features/auth/AuthProvider';
 import { ApiError, authApi } from '../features/auth/auth.api';
+import { NotificationsMenu } from '../features/notifications/NotificationsMenu';
 
 export function SiteHeader() {
   const { user, loading, setUser } = useAuth();
@@ -33,10 +34,12 @@ export function SiteHeader() {
         <nav aria-label="Navigare principală" className="account-links">
           {loading ? <span className="session-status" role="status">Se verifică sesiunea…</span> : user ? (
             <>
+              <a href="#/dashboard">Panou</a>
               <a href="#/resources">Resurse</a>
               <a href="#/bookings">Rezervări</a>
               {user.role === 'ADMIN' && <a href="#/admin/resources">Administrare</a>}
               <a href="#/profile">Profilul meu</a>
+              <NotificationsMenu />
               <button type="button" className="text-button" disabled={busy} onClick={logout}>
                 {busy ? 'Se deconectează…' : 'Deconectare'} <span aria-hidden="true">↗</span>
               </button>

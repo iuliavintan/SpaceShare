@@ -19,8 +19,8 @@ export function HomePage() {
           <p className="eyebrow">PENTRU COMUNITATEA UNIVERSITARĂ</p>
           <h1 id="hero-title">Un loc bun<br />pentru <em>ce urmează.</em></h1>
           <p className="hero-description">Spațiile în care învățăm, lucrăm și construim împreună merită să fie mai ușor de găsit.</p>
-          <a className="primary-button" href={user ? '#/resources' : '#/register'}>
-            {user ? 'Explorează resursele' : 'Fă parte din comunitate'} <span aria-hidden="true">↗</span>
+          <a className="primary-button" href={user ? '#/dashboard' : '#/register'}>
+            {user ? 'Deschide dashboardul' : 'Fă parte din comunitate'} <span aria-hidden="true">↗</span>
           </a>
           <p className="small-note">Săli, laboratoare și echipamente, într-un singur loc.</p>
         </div>

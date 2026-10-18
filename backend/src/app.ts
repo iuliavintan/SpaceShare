@@ -12,6 +12,8 @@ import { authenticate } from './middleware/authenticate.js';
 import { createResourcesRouter } from './modules/resources/resources.routes.js';
 import { createCategoriesRouter } from './modules/categories/categories.routes.js';
 import { createBookingsRouter, createBookingAvailabilityRouter } from './modules/bookings/bookings.routes.js';
+import { createDashboardRouter } from './modules/dashboard/dashboard.routes.js';
+import { createNotificationsRouter } from './modules/notifications/notifications.routes.js';
 
 export function createApp(client: PrismaClient = prisma, config: AuthConfig = getAuthConfig(), clock: () => Date = () => new Date()) {
   const app = express();
@@ -29,6 +31,8 @@ export function createApp(client: PrismaClient = prisma, config: AuthConfig = ge
   app.use('/api/resources', authenticate(auth.service, config), createResourcesRouter(client), createBookingAvailabilityRouter(client, clock));
   app.use('/api/categories', authenticate(auth.service, config), createCategoriesRouter(client));
   app.use('/api/bookings', authenticate(auth.service, config), createBookingsRouter(client, clock));
+  app.use('/api/dashboard', createDashboardRouter(client, auth.service, config, clock));
+  app.use('/api/notifications', createNotificationsRouter(client, auth.service, config, clock));
   app.use((_request, response) => {
     response.status(404).json({ error: 'Ruta nu exista.' });
   });

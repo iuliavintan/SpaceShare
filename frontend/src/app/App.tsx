@@ -8,6 +8,7 @@ import { ResourcesPage } from '../pages/ResourcesPage';
 import { ResourceDetailPage } from '../pages/ResourceDetailPage';
 import { NewResourcePage } from '../pages/NewResourcePage';
 import { BookingsPage } from '../pages/BookingsPage';
+import { DashboardPage } from '../features/dashboard/DashboardPage';
 const ResourceCalendarPage = lazy(() => import('../pages/ResourceCalendarPage').then((module) => ({ default: module.ResourceCalendarPage })));
 
 function Pages() {
@@ -23,6 +24,7 @@ function Pages() {
   if (path === '#/login') return <AuthPage key="login" mode="login" />;
   if (path === '#/register') return <AuthPage key="register" mode="register" />;
   if (path === '#/profile') return <ProfilePage />;
+  if (path === '#/dashboard') return <RequireAccess><DashboardPage /></RequireAccess>;
   if (path === '#/bookings') return <RequireAccess><BookingsPage /></RequireAccess>;
   const calendarPath = /^#\/calendar\/([^/]+)$/.exec(path);
   if (calendarPath) {
