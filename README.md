@@ -38,3 +38,5 @@ Open **http://127.0.0.1:5173**. The backend runs on port **3000** and prepares t
 You can create an account, browse resources, make bookings and track their status from your dashboard. Administrators can manage resources and booking requests. In-app notifications report booking decisions, and resource pages include a daily and weekly availability calendar.
 
 For a demo administrator, set `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in `backend/.env` before starting. Use an email that is not already registered. The JWT secret is generated locally on first startup.
+
+See [docs/DEMO_SCENARIO.md](docs/DEMO_SCENARIO.md) for a short local walkthrough using a separate SQLite database.

@@ -18,7 +18,7 @@ function BookingRows({ bookings, showOwner = false }: { bookings: DashboardBooki
 function UserDashboardView({ data }: { data: UserDashboard }) {
   const stats = data.statistics.bookings;
   return <>
-    <div className="dashboard-stats" aria-label="Rezumat rezervări">
+    <div className="dashboard-stats" role="group" aria-label="Rezumat rezervări">
       <div><span>Total</span><strong>{stats.total}</strong></div><div><span>În așteptare</span><strong>{stats.pending}</strong></div><div><span>Aprobate</span><strong>{stats.approved}</strong></div><div><span>Încheiate</span><strong>{stats.completed}</strong></div>
     </div>
     <section className="dashboard-section"><div className="dashboard-section-heading"><div><p className="eyebrow">URMEAZĂ</p><h2>Rezervările viitoare</h2></div><a href="#/bookings" className="back-link">Toate rezervările ↗</a></div><BookingRows bookings={data.upcomingBookings} /></section>
@@ -29,7 +29,7 @@ function UserDashboardView({ data }: { data: UserDashboard }) {
 function AdminDashboardView({ data }: { data: AdminDashboard }) {
   const stats = data.statistics;
   return <>
-    <div className="dashboard-stats" aria-label="Statistici administrare">
+    <div className="dashboard-stats" role="group" aria-label="Statistici administrare">
       <div><span>Resurse active</span><strong>{stats.resources.active}<small> / {stats.resources.total}</small></strong></div><div><span>Cereri de aprobare</span><strong>{stats.bookings.pending}</strong></div><div><span>Rezervări aprobate</span><strong>{stats.bookings.approved}</strong></div><div><span>Total rezervări</span><strong>{stats.bookings.total}</strong></div>
     </div>
     <section className="dashboard-section"><div className="dashboard-section-heading"><div><p className="eyebrow">NECESITĂ ACȚIUNE</p><h2>Cereri de aprobare</h2></div><a href="#/bookings" className="back-link">Gestionează cererile ↗</a></div><BookingRows bookings={data.pendingBookings} showOwner /></section>
