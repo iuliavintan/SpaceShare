@@ -10,7 +10,9 @@ export function csrfProtection(config: AuthConfig): RequestHandler {
     if (request.get('x-spaceshare-request') !== '1' || (origin && !config.origins.includes(origin))) {
       return next(new HttpError(403, 'Originea cererii nu este permisa.'));
     }
-    if (!request.is('application/json')) return next(new HttpError(415, 'Cererea trebuie trimisa ca application/json.'));
+    if (!request.is('application/json') && !request.is(['image/png', 'image/jpeg', 'image/webp'])) {
+      return next(new HttpError(415, 'Cererea trebuie trimisa ca JSON sau imagine PNG, JPEG ori WebP.'));
+    }
     next();
   };
 }

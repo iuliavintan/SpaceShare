@@ -20,7 +20,8 @@ test('resource API', async (suite) => {
   const client = createDatabaseClient(url);
   const config = { secret: randomBytes(48).toString('hex'), origins: ['http://127.0.0.1:5173'], secureCookie: false };
   const env = { ...process.env, DATABASE_URL: url };
-  const app = createApp(client, config);
+  const floorplanDirectory = join(directory, 'floorplans');
+  const app = createApp(client, config, undefined, floorplanDirectory);
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const address = server.address();
@@ -35,7 +36,7 @@ test('resource API', async (suite) => {
   try {
     execFileSync(process.execPath, ['--import', 'tsx', 'prisma/prepare.ts'], { cwd: root, env, stdio: 'pipe' });
     execFileSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy', '--config', 'prisma7.config.ts'], { cwd: root, env, stdio: 'pipe' });
-    await seedDatabase(client);
+    await seedDatabase(client, floorplanDirectory);
     const password = randomBytes(16).toString('hex');
     await seedAdmin(client, { email: 'admin@example.test', password });
     const registration = await call('/auth/register', 'POST', { name: 'Student', email: 'student@example.test', password });
@@ -57,9 +58,39 @@ test('resource API', async (suite) => {
       assert.equal(categories.categories.length, 4);
       const details = await (await call('/resources/demo-study-room', 'GET', undefined, userCookie)).json();
       assert.equal(details.resource.availability.length, 5);
+      assert.match(details.resource.floorplan.url, /demo-study-room\/floorplan\/image$/);
+      const floorplanImage = await fetch(`http://127.0.0.1:${address.port}${details.resource.floorplan.url}`, { headers: { Cookie: userCookie } });
+      assert.equal(floorplanImage.status, 200);
+      assert.match(floorplanImage.headers.get('content-type') ?? '', /image\/svg\+xml/);
+      assert.match(await floorplanImage.text(), /SCHEMATIC/);
       assert.equal((await call('/resources', 'POST', {}, userCookie)).status, 403);
       assert.equal((await call('/resources?status=all', 'GET', undefined, userCookie)).status, 403);
       assert.equal((await call('/resources?status=all', 'GET', undefined, adminCookie)).status, 200);
+    });
+
+    await suite.test('admins can add and remove local floorplan images for a resource', async () => {
+      const resourceId = 'demo-study-room';
+      const imageBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', 'base64');
+      const upload = (cookie: string, bytes = imageBytes, contentType = 'image/png') => fetch(`${base}/resources/${resourceId}/floorplan`, {
+        method: 'PUT', headers: { 'Content-Type': contentType, 'X-SpaceShare-Request': '1', Origin: config.origins[0]!, Cookie: cookie }, body: bytes,
+      });
+      assert.equal((await upload(userCookie)).status, 403);
+      assert.equal((await upload(adminCookie, Buffer.from('not an image'))).status, 400);
+      assert.equal((await upload(adminCookie, imageBytes, 'image/svg+xml')).status, 415);
+      const saved = await upload(adminCookie);
+      assert.equal(saved.status, 200);
+      const { floorplan } = await saved.json();
+      assert.equal(floorplan.altText, 'Plan arhitectural pentru Sala de studiu A101');
+      const details = await (await call(`/resources/${resourceId}`, 'GET', undefined, userCookie)).json();
+      assert.equal(details.resource.floorplan.url, floorplan.url);
+      const image = await fetch(`http://127.0.0.1:${address.port}${floorplan.url}`, { headers: { Cookie: userCookie } });
+      assert.equal(image.status, 200);
+      assert.match(image.headers.get('content-type') ?? '', /image\/png/);
+      assert.deepEqual(Buffer.from(await image.arrayBuffer()), imageBytes);
+      assert.equal((await call(`/resources/${resourceId}/floorplan`, 'DELETE', {}, userCookie)).status, 403);
+      assert.equal((await call(`/resources/${resourceId}/floorplan`, 'DELETE', {}, adminCookie)).status, 204);
+      const afterRemoval = await (await call(`/resources/${resourceId}`, 'GET', undefined, userCookie)).json();
+      assert.equal(afterRemoval.resource.floorplan, null);
     });
 
     await suite.test('calendar feed returns occupied intervals and opening hours without personal data', async () => {

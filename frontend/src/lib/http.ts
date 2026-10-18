@@ -2,14 +2,15 @@ export class ApiError extends Error {
   constructor(public readonly status: number, message: string) { super(message); }
 }
 
-export async function request(path: string, method = 'GET', body?: object, signal?: AbortSignal): Promise<unknown> {
+export async function request(path: string, method = 'GET', body?: object | Blob, signal?: AbortSignal): Promise<unknown> {
   let response: Response;
+  const fileBody = typeof Blob !== 'undefined' && body instanceof Blob ? body : undefined;
   try {
     response = await fetch(`/api${path}`, {
       method, credentials: 'same-origin', cache: 'no-store',
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000),
-      headers: body ? { 'Content-Type': 'application/json', 'X-SpaceShare-Request': '1' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
+      headers: body ? { 'Content-Type': fileBody?.type ?? 'application/json', 'X-SpaceShare-Request': '1' } : undefined,
+      body: fileBody ?? (body ? JSON.stringify(body) : undefined),
     });
   } catch { throw new ApiError(0, 'Serverul nu poate fi contactat. Verifică conexiunea și încearcă din nou.'); }
   if (response.status === 204) return null;

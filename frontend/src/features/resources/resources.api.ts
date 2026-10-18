@@ -1,5 +1,5 @@
 import { request } from '../../lib/http';
-import type { AvailabilityWindow, Category, Resource, ResourceBlock, ResourceDetail, ResourceFilters, ResourceInput, ResourceList } from './resources.types';
+import type { AvailabilityWindow, Category, Floorplan, Resource, ResourceBlock, ResourceDetail, ResourceFilters, ResourceInput, ResourceList } from './resources.types';
 
 import { readObject as object, readString as string, readInteger as number, readBoolean as boolean, readArray as array } from '../../lib/api-values';
 function category(value: unknown): Category { const row = object(value); return { id: string(row.id), name: string(row.name) }; }
@@ -9,6 +9,11 @@ function resource(value: unknown): Resource {
 }
 function window(value: unknown): AvailabilityWindow { const row = object(value); return { id: string(row.id), dayOfWeek: number(row.dayOfWeek), startMinute: number(row.startMinute), endMinute: number(row.endMinute) }; }
 function block(value: unknown): ResourceBlock { const row = object(value); return { id: string(row.id), startAt: string(row.startAt), endAt: string(row.endAt), reason: string(row.reason) }; }
+function floorplan(value: unknown): Floorplan | null {
+  if (value === null) return null;
+  const row = object(value);
+  return { url: string(row.url), altText: string(row.altText) };
+}
 const path = (id: string) => `/resources/${encodeURIComponent(id)}`;
 
 export const resourcesApi = {
@@ -22,10 +27,15 @@ export const resourcesApi = {
   },
   async detail(id: string, signal?: AbortSignal): Promise<ResourceDetail> {
     const row = object(object(await request(path(id), 'GET', undefined, signal)).resource);
-    return { ...resource(row), availability: array(row.availability, window), blocks: array(row.blocks, block) };
+    return { ...resource(row), availability: array(row.availability, window), blocks: array(row.blocks, block), floorplan: floorplan(row.floorplan) };
   },
   async create(data: ResourceInput) { return resource(object(await request('/resources', 'POST', data)).resource); },
   async update(id: string, data: Partial<ResourceInput>) { return resource(object(await request(path(id), 'PATCH', data)).resource); },
+  async saveFloorplan(id: string, file: Blob) {
+    const data = object(await request(`${path(id)}/floorplan`, 'PUT', file));
+    return floorplan(data.floorplan)!;
+  },
+  async deleteFloorplan(id: string) { await request(`${path(id)}/floorplan`, 'DELETE', {}); },
   async saveAvailability(id: string, windows: AvailabilityWindow[]) { await request(`${path(id)}/availability`, 'PUT', { windows: windows.map(({ dayOfWeek, startMinute, endMinute }) => ({ dayOfWeek, startMinute, endMinute })) }); },
   async createBlock(id: string, data: Omit<ResourceBlock, 'id'>) { await request(`${path(id)}/blocks`, 'POST', data); },
   async deleteBlock(id: string, blockId: string) { await request(`${path(id)}/blocks/${encodeURIComponent(blockId)}`, 'DELETE', {}); },

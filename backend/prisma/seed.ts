@@ -1,10 +1,22 @@
-import { pathToFileURL } from 'node:url';
+import { copyFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { PrismaClient } from '../generated/prisma/client.js';
 import { createDatabaseClient } from '../src/db/client.js';
 import { demoResources } from './seed-data.js';
 import { seedAdmin } from './seed-admin.js';
 
-export async function seedDatabase(client: PrismaClient) {
+const demoFloorplans = [
+  { resourceId: 'demo-study-room', filename: 'demo-study-room.svg', altText: 'Schiță orientativă a sălii de studiu A101, cu patru mese pentru opt persoane.' },
+  { resourceId: 'demo-lab', filename: 'demo-lab.svg', altText: 'Schiță orientativă a laboratorului B201, cu douăsprezece posturi duble pentru 24 de persoane.' },
+  { resourceId: 'demo-meeting-room', filename: 'demo-meeting-room.svg', altText: 'Schiță orientativă a sălii C102, cu o masă de ședință pentru 12 persoane.' },
+];
+
+export async function seedDatabase(client: PrismaClient, floorplanDirectory = join(process.cwd(), 'uploads', 'floorplans')) {
+  await mkdir(floorplanDirectory, { recursive: true });
+  for (const plan of demoFloorplans) {
+    await copyFile(fileURLToPath(new URL(`./floorplans/${plan.filename}`, import.meta.url)), join(floorplanDirectory, plan.filename));
+  }
   await client.$transaction(async (transaction) => {
     for (const demo of demoResources) {
       const { category: categoryName, ...resourceData } = demo;
@@ -21,6 +33,10 @@ export async function seedDatabase(client: PrismaClient) {
           })) },
         },
       });
+    }
+    for (const plan of demoFloorplans) {
+      if (await transaction.resourceImage.findFirst({ where: { resourceId: plan.resourceId, position: 0 } })) continue;
+      await transaction.resourceImage.create({ data: { resourceId: plan.resourceId, path: plan.filename, altText: plan.altText, position: 0 } });
     }
   });
 }

@@ -22,7 +22,7 @@ export function resourcesService(client: PrismaClient) {
     async detail(id: string, admin: boolean) {
       const resource = await client.resource.findFirst({
         where: { id, ...(admin ? {} : { isActive: true }) },
-        include: { category: true, availability: { orderBy: [{ dayOfWeek: 'asc' }, { startMinute: 'asc' }] }, blocks: { orderBy: { startAt: 'asc' } }, ...(admin ? { _count: { select: { bookings: true } } } : {}) },
+        include: { category: true, availability: { orderBy: [{ dayOfWeek: 'asc' }, { startMinute: 'asc' }] }, blocks: { orderBy: { startAt: 'asc' } }, images: { where: { position: 0 }, select: { altText: true } }, ...(admin ? { _count: { select: { bookings: true } } } : {}) },
       });
       if (!resource) throw new HttpError(404, 'Resursa nu exista sau este dezactivata.');
       return resource;
