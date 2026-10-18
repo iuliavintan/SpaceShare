@@ -48,8 +48,32 @@ a, button { transition: color .2s, background-color .2s, border-color .2s; }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 650; letter-spacing: -.06em; white-space: nowrap; }
 .brand svg { flex-shrink: 0; }
 .site-motto { font: italic 14px var(--font-serif); color: var(--color-muted); }
-.account-links { display: flex; flex-wrap: wrap; align-items: center; gap: 26px; font-size: 12px; font-weight: 550; }
-.account-links > a:not(.primary-button):hover, .text-button:hover { color: var(--color-accent); }
+.site-header-actions { display: flex; align-items: center; justify-content: end; gap: 20px; margin-left: auto; }
+.site-menu { position: relative; }
+.site-menu-trigger { display: inline-flex; min-height: 42px; align-items: center; gap: 11px; padding: 0 13px; border: 1px solid var(--color-line); background: transparent; color: var(--color-ink); font-size: 11px; font-weight: 600; }
+.site-menu-trigger:hover, .site-menu-trigger[aria-expanded='true'] { border-color: var(--color-ink); background: #eeeadd80; }
+.site-menu-icon { display: grid; gap: 3px; width: 14px; }
+.site-menu-icon i { display: block; height: 1px; background: currentColor; }
+.site-menu-icon i:nth-child(2) { width: 10px; }
+.site-menu-chevron { margin-left: 4px; color: var(--color-accent); font-size: 16px; font-weight: 400; line-height: 1; }
+.site-menu-overlay { position: fixed; z-index: 50; inset: 0; }
+.site-menu-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #171b18a8; animation: menu-backdrop-in .22s ease-out both; }
+.site-menu-panel { position: absolute; top: 0; right: 0; display: flex; width: min(390px, 90vw); height: 100%; flex-direction: column; overflow-y: auto; padding: 30px clamp(22px, 5vw, 38px); background: var(--color-paper); box-shadow: -18px 0 48px #171b1833; animation: menu-slide-in .28s cubic-bezier(.2,.75,.25,1) both; }
+.site-menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 27px; border-bottom: 1px solid var(--color-line); }
+.site-menu-heading h2 { margin: 7px 0 0; font: 27px/1.15 var(--font-serif); }
+.site-menu-caption { padding: 12px 17px 6px; color: var(--color-muted); font-size: 9px; font-weight: 650; letter-spacing: .14em; }
+.site-menu-heading .site-menu-caption { padding: 0; color: var(--color-accent); }
+.site-menu-close { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; border: 1px solid var(--color-line); background: transparent; color: var(--color-ink); font-size: 26px; font-weight: 300; line-height: 1; }
+.site-menu-close:hover { border-color: var(--color-ink); background: #eeeadd; }
+.site-menu-nav { padding-top: 17px; }
+.site-menu-link { display: block; padding: 13px 17px; color: var(--color-ink); font-size: 14px; }
+.site-menu-link:hover { background: #eeeadd; color: var(--color-accent); }
+.site-menu-divider { height: 1px; margin: 8px 17px; background: var(--color-line); }
+.site-menu-logout { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 11px 17px; border: 0; background: transparent; color: var(--color-muted); text-align: left; font-size: 11px; }
+.site-menu-logout:hover { color: var(--color-accent); }
+@keyframes menu-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes menu-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+.text-button:hover { color: var(--color-accent); }
 .session-status { font-size: 11px; color: var(--color-muted); }
 .text-button { background: transparent; color: inherit; border: 0; padding: 4px 0; }
 .primary-button, .secondary-button { display: inline-flex; align-items: center; justify-content: space-between; gap: 30px; padding: 14px 20px; font-size: 12px; font-weight: 600; line-height: 1.5; border: 1px solid transparent; }
@@ -147,8 +171,8 @@ a, button { transition: color .2s, background-color .2s, border-color .2s; }
   .site-header { min-height: 80px; flex-wrap: wrap; padding: 17px 0; gap: 15px; }
   .brand { font-size: 19px; gap: 7px; }
   .brand svg { width: 25px; }
-  .account-links { gap: 14px; font-size: 11px; }
-  .account-links .primary-button { padding: 10px 13px; gap: 12px; font-size: 10px; }
+  .site-header-actions { gap: 13px; }
+  .site-menu-trigger { min-height: 39px; gap: 8px; padding: 0 10px; }
   .hero { grid-template-columns: 1fr; gap: 30px; padding: 40px 0; }
   .hero h1 { font-size: clamp(42px, 8vw, 56px); }
   .floorplan { height: 330px; }
@@ -295,14 +319,12 @@ a, button { transition: color .2s, background-color .2s, border-color .2s; }
 .dashboard-booking h3 a:hover { color: var(--color-accent); }
 .dashboard-booking .small-note { margin-top: 6px; }
 .dashboard-empty { padding: 20px 0; border-top: 1px solid var(--color-line); }
-@media (max-width: 980px) { .account-links { gap: 15px; } }
 @media (max-width: 760px) {
   .dashboard-page { padding-top: 30px; }
   .dashboard-stats { grid-template-columns: 1fr 1fr; gap: 0 20px; margin-bottom: 35px; }
   .dashboard-stats > div { border-bottom: 1px solid var(--color-line); }
   .dashboard-section-heading { align-items: start; flex-direction: column; }
   .dashboard-booking { align-items: start; flex-direction: column; gap: 12px; }
-  .account-links { gap: 10px; }
   .notifications-label { display: none; }
   .notifications-panel { right: -20px; }
 }
