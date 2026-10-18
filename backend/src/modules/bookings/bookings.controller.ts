@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
 import { objectInput, textInput } from '../../shared/validation.js';
 import type { bookingsService, BookingAction } from './bookings.service.js';
-import { bookingFilters, bookingInput, bookingInterval } from './bookings.validation.js';
+import { bookingFilters, bookingInput, bookingInterval, calendarRange } from './bookings.validation.js';
 
 export function bookingsController(service: ReturnType<typeof bookingsService>) {
   const create: RequestHandler = async (request, response) => {
@@ -16,9 +16,12 @@ export function bookingsController(service: ReturnType<typeof bookingsService>) 
   const availability: RequestHandler = async (request, response) => {
     response.json(await service.availability(request.authUser!, textInput(request.params.id, 'ID'), bookingInterval(objectInput(request.query, ['startAt', 'endAt']))));
   };
+  const calendar: RequestHandler = async (request, response) => {
+    response.json(await service.calendar(request.authUser!, textInput(request.params.id, 'ID'), calendarRange(request.query)));
+  };
   const transition = (action: BookingAction): RequestHandler => async (request, response) => {
     objectInput(request.body, []);
     response.json({ booking: await service.transition(request.authUser!, textInput(request.params.id, 'ID'), action) });
   };
-  return { create, list, detail, availability, transition };
+  return { create, list, detail, availability, calendar, transition };
 }

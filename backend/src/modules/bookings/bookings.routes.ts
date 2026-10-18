@@ -18,6 +18,8 @@ export function createBookingsRouter(client: PrismaClient, clock: () => Date) {
 
 export function createBookingAvailabilityRouter(client: PrismaClient, clock: () => Date) {
   const router = Router();
-  router.get('/:id/availability', bookingsController(bookingsService(client, clock)).availability);
+  const controller = bookingsController(bookingsService(client, clock));
+  router.get('/:id/calendar', controller.calendar);
+  router.get('/:id/availability', controller.availability);
   return router;
 }

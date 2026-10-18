@@ -66,6 +66,27 @@ export function bookingsService(client: PrismaClient, clock: () => Date) {
         return availabilityResult(transaction, resource, interval);
       });
     },
+    async calendar(user: PublicUser, resourceId: string, range: { startAt: Date; endAt: Date }) {
+      return databaseTransaction(client, async (transaction) => {
+        await settleBookings(transaction, clock());
+        const resource = await transaction.resource.findUnique({ where: { id: resourceId }, include: { availability: { orderBy: [{ dayOfWeek: 'asc' }, { startMinute: 'asc' }] } } });
+        if (!resource || (!resource.isActive && user.role !== 'ADMIN')) throw new HttpError(404, 'Resursa nu exista sau este dezactivata.');
+        const overlap = { resourceId, startAt: { lt: range.endAt }, endAt: { gt: range.startAt } };
+        const [bookings, blocks] = await Promise.all([
+          transaction.booking.findMany({ where: { ...overlap, status: { in: ['PENDING', 'APPROVED'] } }, select: { id: true, startAt: true, endAt: true } }),
+          transaction.resourceBlock.findMany({ where: overlap, select: { id: true, startAt: true, endAt: true } }),
+        ]);
+        const events = [
+          ...bookings.map(({ id, startAt, endAt }) => ({ id: `booking:${id}`, kind: 'BOOKING' as const, startAt, endAt })),
+          ...blocks.map(({ id, startAt, endAt }) => ({ id: `block:${id}`, kind: 'BLOCK' as const, startAt, endAt })),
+        ].sort((left, right) => left.startAt.getTime() - right.startAt.getTime());
+        return {
+          resource: { id: resource.id, name: resource.name, isActive: resource.isActive },
+          availability: resource.availability.map(({ dayOfWeek, startMinute, endMinute }) => ({ dayOfWeek, startMinute, endMinute })),
+          events,
+        };
+      });
+    },
     async list(user: PublicUser, filters: ReturnType<typeof bookingFilters>) {
       if (filters.scope === 'all' && user.role !== 'ADMIN') throw new HttpError(403, 'Doar administratorii pot vedea toate rezervarile.');
       const where: Prisma.BookingWhereInput = { userId: filters.scope === 'mine' ? user.id : undefined, status: filters.status, resourceId: filters.resourceId };

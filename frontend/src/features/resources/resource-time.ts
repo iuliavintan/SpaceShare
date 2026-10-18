@@ -23,4 +23,9 @@ export function bucharestToUtc(value: string): string {
   if (candidates.length !== 1) throw new Error('Ora aleasă nu există sau este ambiguă la schimbarea orei. Alege altă oră.');
   return candidates[0]!.toISOString();
 }
+export function utcToBucharestInput(value: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) throw new Error('Data calendarului nu este valida.');
+  return localParts(date);
+}
 export const formatDateTime = (value: string) => new Intl.DateTimeFormat('ro-RO', { timeZone: 'Europe/Bucharest', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));

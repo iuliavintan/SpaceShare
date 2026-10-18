@@ -12,6 +12,14 @@ export function bookingInterval(data: Record<string, unknown>) {
   return { startAt, endAt };
 }
 
+export function calendarRange(value: unknown) {
+  const data = objectInput(value, ['startAt', 'endAt']);
+  const startAt = dateInput(data.startAt), endAt = dateInput(data.endAt);
+  // A calendar week can be 167 or 169 real hours across Bucharest DST changes.
+  if (startAt >= endAt || endAt.getTime() - startAt.getTime() > 8 * 86400000) throw new HttpError(400, 'Intervalul calendarului trebuie sa fie pozitiv si sa acopere cel mult o saptamana.');
+  return { startAt, endAt };
+}
+
 export function bookingInput(value: unknown) {
   const data = objectInput(value, ['resourceId', 'startAt', 'endAt', 'reason']);
   return { resourceId: textInput(data.resourceId, 'Resursa'), ...bookingInterval(data), reason: data.reason === undefined || data.reason === '' ? null : textInput(data.reason, 'Scop', 500) };

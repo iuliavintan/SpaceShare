@@ -62,6 +62,33 @@ test('resource API', async (suite) => {
       assert.equal((await call('/resources?status=all', 'GET', undefined, adminCookie)).status, 200);
     });
 
+    await suite.test('calendar feed returns occupied intervals and opening hours without personal data', async () => {
+      const student = await client.user.findUniqueOrThrow({ where: { email: 'student@example.test' } });
+      await client.booking.create({ data: {
+        resourceId: 'demo-meeting-room', userId: student.id,
+        startAt: new Date('2030-01-07T08:30:00Z'), endAt: new Date('2030-01-07T09:00:00Z'), status: 'PENDING',
+      } });
+      await client.resourceBlock.create({ data: {
+        resourceId: 'demo-meeting-room', startAt: new Date('2030-01-07T09:00:00Z'),
+        endAt: new Date('2030-01-07T09:30:00Z'), reason: 'Private maintenance reason',
+      } });
+      assert.equal((await call('/resources/demo-meeting-room/calendar?startAt=2030-01-07T08:00:00Z&endAt=2030-01-07T10:00:00Z')).status, 401);
+      const response = await call('/resources/demo-meeting-room/calendar?startAt=2030-01-07T08:00:00Z&endAt=2030-01-07T10:00:00Z', 'GET', undefined, userCookie);
+      assert.equal(response.status, 200);
+      const feed = await response.json();
+      assert.equal(feed.resource.name, 'Sala de ședințe C102');
+      assert.equal(feed.availability.some((window: { dayOfWeek: number }) => window.dayOfWeek === 1), true);
+      assert.deepEqual(feed.events.map((event: { kind: string; startAt: string; endAt: string }) => [event.kind, event.startAt, event.endAt]), [
+        ['BOOKING', '2030-01-07T08:30:00.000Z', '2030-01-07T09:00:00.000Z'],
+        ['BLOCK', '2030-01-07T09:00:00.000Z', '2030-01-07T09:30:00.000Z'],
+      ]);
+      assert.equal(JSON.stringify(feed).includes('student@example.test'), false);
+      assert.equal(JSON.stringify(feed).includes('Private maintenance reason'), false);
+      const autumnWeek = await call('/resources/demo-meeting-room/calendar?startAt=2030-10-21T21:00:00Z&endAt=2030-10-28T22:00:00Z', 'GET', undefined, userCookie);
+      assert.equal(autumnWeek.status, 200); // A local calendar week can span 169 real hours when DST ends.
+      assert.equal((await call('/resources/demo-meeting-room/calendar?startAt=2030-01-01T00:00:00Z&endAt=2030-01-10T00:00:00Z', 'GET', undefined, userCookie)).status, 400);
+    });
+
     await suite.test('admins manage categories and resource status without deleting history', async () => {
       assert.equal((await call('/categories', 'POST', { name: 'New category' }, userCookie)).status, 403);
       const categoryResponse = await call('/categories', 'POST', { name: 'New category' }, adminCookie);

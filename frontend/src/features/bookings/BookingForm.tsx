@@ -1,17 +1,22 @@
-import { useState, type FormEvent } from 'react';
-import { bucharestToUtc } from '../resources/resource-time';
+import { useRef, useState, type FormEvent } from 'react';
+import { bucharestToUtc, utcToBucharestInput } from '../resources/resource-time';
 import { ActionFeedback, useResourceAction } from '../resources/useResourceAction';
 import { bookingsApi } from './bookings.api';
 import { bookingLabels, type AvailabilityResult, type Booking } from './bookings.types';
 
-export function BookingForm({ resourceId, requiresApproval }: { resourceId: string; requiresApproval: boolean }) {
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
+export function BookingForm({ resourceId, requiresApproval, initialInterval, onCreated }: { resourceId: string; requiresApproval: boolean; initialInterval?: { startAt: string; endAt: string }; onCreated?: () => void }) {
+  const initialValues = useRef(initialInterval ? { start: utcToBucharestInput(initialInterval.startAt), end: utcToBucharestInput(initialInterval.endAt) } : { start: '', end: '' });
+  const initialInstants = useRef(initialInterval);
+  const [start, setStart] = useState(initialValues.current.start);
+  const [end, setEnd] = useState(initialValues.current.end);
   const [reason, setReason] = useState('');
   const [availability, setAvailability] = useState<AvailabilityResult | null>(null);
   const [created, setCreated] = useState<Booking | null>(null);
   const action = useResourceAction();
-  const interval = () => ({ startAt: bucharestToUtc(start), endAt: bucharestToUtc(end) });
+  const interval = () => ({
+    startAt: initialInstants.current && start === initialValues.current.start ? initialInstants.current.startAt : bucharestToUtc(start),
+    endAt: initialInstants.current && end === initialValues.current.end ? initialInstants.current.endAt : bucharestToUtc(end),
+  });
   function changed() { setAvailability(null); setCreated(null); }
   async function check() {
     const result = await action.run(() => bookingsApi.availability(resourceId, interval()));
@@ -21,7 +26,7 @@ export function BookingForm({ resourceId, requiresApproval }: { resourceId: stri
     event.preventDefault();
     setAvailability(null);
     const result = await action.run(() => bookingsApi.create({ resourceId, ...interval(), reason }));
-    if (result.ok) setCreated(result.value);
+    if (result.ok) { setCreated(result.value); onCreated?.(); }
   }
   return <section className="management-section booking-form" aria-labelledby="booking-form-title">
     <p className="eyebrow">REZERVĂ RESURSA</p><h2 id="booking-form-title">Fă loc planurilor tale<span className="text-accent">.</span></h2>
