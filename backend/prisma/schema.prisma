@@ -23,9 +23,11 @@ enum BookingStatus {
 }
 
 enum NotificationType {
+  BOOKING_REQUESTED
   BOOKING_APPROVED
   BOOKING_REJECTED
   BOOKING_CANCELLED
+  BOOKING_REMINDER
 }
 
 model User {
@@ -116,6 +118,7 @@ model Notification {
 
   @@index([userId, readAt, createdAt])
   @@index([bookingId])
+  @@unique([userId, bookingId, type])
 }
 
 model ResourceImage {

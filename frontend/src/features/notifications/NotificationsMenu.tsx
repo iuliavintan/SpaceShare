@@ -11,8 +11,8 @@ export function NotificationsMenu() {
   const [busyId, setBusyId] = useState('');
   const [loading, setLoading] = useState(true);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const load = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true);
+  const load = useCallback(async (signal?: AbortSignal, showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const result = await notificationsApi.list(signal);
       setNotifications(result.notifications);
@@ -21,14 +21,15 @@ export function NotificationsMenu() {
     } catch (error: unknown) {
       if (signal?.aborted) return;
       setError(error instanceof Error ? error.message : 'Notificările nu pot fi încărcate.');
-    } finally { if (!signal?.aborted) setLoading(false); }
+    } finally { if (!signal?.aborted && showLoading) setLoading(false); }
   }, []);
   useEffect(() => {
     const controller = new AbortController();
     void load(controller.signal);
     const onNavigate = () => { void load(); };
     window.addEventListener('hashchange', onNavigate);
-    return () => { controller.abort(); window.removeEventListener('hashchange', onNavigate); };
+    const refreshInterval = window.setInterval(() => { void load(undefined, false); }, 30_000);
+    return () => { controller.abort(); window.clearInterval(refreshInterval); window.removeEventListener('hashchange', onNavigate); };
   }, [load]);
   useEffect(() => {
     if (!open) return;

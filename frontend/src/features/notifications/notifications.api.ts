@@ -1,7 +1,7 @@
 import { request } from '../../lib/http';
 import { readArray, readInteger, readObject, readString } from '../../lib/api-values';
 
-export type NotificationType = 'BOOKING_APPROVED' | 'BOOKING_REJECTED' | 'BOOKING_CANCELLED';
+export type NotificationType = 'BOOKING_REQUESTED' | 'BOOKING_APPROVED' | 'BOOKING_REJECTED' | 'BOOKING_CANCELLED' | 'BOOKING_REMINDER';
 export interface SpaceShareNotification {
   id: string;
   bookingId: string | null;
@@ -15,7 +15,7 @@ export interface SpaceShareNotification {
 function readNotification(value: unknown): SpaceShareNotification {
   const row = readObject(value);
   const type = row.type;
-  if (type !== 'BOOKING_APPROVED' && type !== 'BOOKING_REJECTED' && type !== 'BOOKING_CANCELLED') throw new Error('Tip de notificare invalid în răspuns.');
+  if (type !== 'BOOKING_REQUESTED' && type !== 'BOOKING_APPROVED' && type !== 'BOOKING_REJECTED' && type !== 'BOOKING_CANCELLED' && type !== 'BOOKING_REMINDER') throw new Error('Tip de notificare invalid în răspuns.');
   let booking: SpaceShareNotification['booking'] = null;
   if (row.booking !== null) {
     const bookingRow = readObject(row.booking);

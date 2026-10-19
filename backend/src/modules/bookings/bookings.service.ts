@@ -58,7 +58,30 @@ export function bookingsService(client: PrismaClient, clock: () => Date) {
         if (!resource?.isActive) throw new HttpError(404, 'Resursa nu exista sau este dezactivata.');
         const result = await availabilityResult(transaction, resource, data);
         if (!result.available) throw new HttpError(409, result.message);
-        return transaction.booking.create({ data: { ...data, userId: user.id, status: resource.requiresApproval ? 'PENDING' : 'APPROVED' }, include });
+        const booking = await transaction.booking.create({ data: { ...data, userId: user.id, status: resource.requiresApproval ? 'PENDING' : 'APPROVED' }, include });
+        if (booking.status === 'PENDING') {
+          const admins = await transaction.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } });
+          await transaction.notification.createMany({
+            data: admins.map(({ id }) => ({
+              userId: id,
+              bookingId: booking.id,
+              type: 'BOOKING_REQUESTED',
+              message: `Cerere nouă de la ${booking.user.name} pentru „${booking.resource.name}”.`,
+              createdAt: now,
+            })),
+          });
+        } else {
+          await transaction.notification.create({
+            data: {
+              userId: user.id,
+              bookingId: booking.id,
+              type: 'BOOKING_APPROVED',
+              message: `Rezervarea ta pentru „${booking.resource.name}” a fost confirmată automat.`,
+              createdAt: now,
+            },
+          });
+        }
+        return booking;
       });
     },
     async availability(user: PublicUser, resourceId: string, interval: { startAt: Date; endAt: Date }) {

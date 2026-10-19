@@ -19,7 +19,7 @@ function withinOpeningHours(resource: ScheduledResource, interval: Interval) {
 
 export async function availabilityResult(transaction: Prisma.TransactionClient, resource: ScheduledResource, interval: Interval, excludeBookingId?: string) {
   if (!resource.isActive) return { available: false, code: 'INACTIVE', message: 'Resursa este dezactivata.' };
-  if (!withinOpeningHours(resource, interval)) return { available: false, code: 'OUTSIDE_HOURS', message: 'Intervalul nu este inclus integral in programul resursei.' };
+  if (!withinOpeningHours(resource, interval)) return { available: false, code: 'OUTSIDE_HOURS', message: 'Intervalul orar nu este inclus integral in program.' };
   const overlap = { resourceId: resource.id, startAt: { lt: interval.endAt }, endAt: { gt: interval.startAt } };
   if (await transaction.resourceBlock.count({ where: overlap })) return { available: false, code: 'RESOURCE_BLOCK', message: 'Resursa este blocata in acest interval.' };
   if (await transaction.booking.count({ where: { ...overlap, id: excludeBookingId ? { not: excludeBookingId } : undefined, status: { in: ['PENDING', 'APPROVED'] } } })) return { available: false, code: 'BOOKING_CONFLICT', message: 'Exista deja o rezervare in acest interval.' };

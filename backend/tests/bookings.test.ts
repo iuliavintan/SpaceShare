@@ -99,18 +99,17 @@ test('booking API', async (suite) => {
       const response = await call('/notifications', 'GET', undefined, user);
       assert.equal(response.status, 200);
       const list = await response.json();
-      assert.equal(list.unreadCount, 1);
-      assert.equal(list.notifications.length, 1);
-      assert.equal(list.notifications[0].type, 'BOOKING_REJECTED');
-      assert.equal(list.notifications[0].bookingId, booking.id);
+      assert.equal(list.unreadCount, 2);
+      const rejection = list.notifications.find((notification: { type: string; bookingId: string }) => notification.bookingId === booking.id && notification.type === 'BOOKING_REJECTED');
+      assert.ok(rejection);
       assert.equal((await call('/notifications', 'GET', undefined, stranger)).status, 200);
       assert.equal((await (await call('/notifications', 'GET', undefined, stranger)).json()).notifications.length, 0);
       assert.equal((await call('/notifications')).status, 401);
-      assert.equal((await call(`/notifications/${list.notifications[0].id}/read`, 'PATCH', {}, stranger)).status, 404);
-      const marked = await call(`/notifications/${list.notifications[0].id}/read`, 'PATCH', {}, user);
+      assert.equal((await call(`/notifications/${rejection.id}/read`, 'PATCH', {}, stranger)).status, 404);
+      const marked = await call(`/notifications/${rejection.id}/read`, 'PATCH', {}, user);
       assert.equal(marked.status, 200);
       assert.ok((await marked.json()).notification.readAt);
-      assert.equal((await (await call('/notifications', 'GET', undefined, user)).json()).unreadCount, 0);
+      assert.equal((await (await call('/notifications', 'GET', undefined, user)).json()).unreadCount, 1);
     });
     await suite.test('approval and admin cancellation notify the owner, while own cancellation does not', async () => {
       const makePending = async (day: string) => {
@@ -125,7 +124,32 @@ test('booking API', async (suite) => {
       const selfCancelled = await makePending('08');
       assert.equal((await call(`/bookings/${selfCancelled.id}/cancel`, 'POST', {}, user)).status, 200);
       const notifications = await (await call('/notifications', 'GET', undefined, user)).json();
-      assert.deepEqual(notifications.notifications.map((item: { type: string }) => item.type).sort(), ['BOOKING_APPROVED', 'BOOKING_CANCELLED', 'BOOKING_REJECTED']);
+      const transitionNotifications = notifications.notifications.filter((item: { bookingId: string }) => [approved.id, ownerCancelled.id, selfCancelled.id].includes(item.bookingId));
+      assert.deepEqual(transitionNotifications.map((item: { type: string }) => item.type).sort(), ['BOOKING_APPROVED', 'BOOKING_CANCELLED']);
+    });
+    await suite.test('admins receive an in-app notification for each new approval request', async () => {
+      const response = await call('/bookings', 'POST', {
+        ...input, resourceId: 'demo-lab', startAt: '2030-02-11T08:00:00Z', endAt: '2030-02-11T09:00:00Z',
+      }, user);
+      assert.equal(response.status, 201);
+      const { booking } = await response.json();
+      assert.equal(booking.status, 'PENDING');
+
+      const adminNotifications = await (await call('/notifications', 'GET', undefined, admin)).json();
+      assert.ok(adminNotifications.notifications.some((notification: { bookingId: string; type: string; message: string }) =>
+        notification.bookingId === booking.id && notification.type === 'BOOKING_REQUESTED' && notification.message.includes(booking.resource.name)));
+    });
+    await suite.test('users receive a confirmation notification for automatically approved bookings', async () => {
+      const response = await call('/bookings', 'POST', {
+        ...input, resourceId: 'demo-study-room', startAt: '2030-02-12T08:00:00Z', endAt: '2030-02-12T09:00:00Z',
+      }, user);
+      assert.equal(response.status, 201);
+      const { booking } = await response.json();
+      assert.equal(booking.status, 'APPROVED');
+
+      const userNotifications = await (await call('/notifications', 'GET', undefined, user)).json();
+      assert.ok(userNotifications.notifications.some((notification: { bookingId: string; type: string }) =>
+        notification.bookingId === booking.id && notification.type === 'BOOKING_APPROVED'));
     });
     await suite.test('availability respects opening hours, pending requests and maintenance without exposing owners', async () => {
       const check = (resourceId: string, startAt: string, endAt: string) => call(`/resources/${resourceId}/availability?${new URLSearchParams({ startAt, endAt })}`, 'GET', undefined, stranger);
@@ -270,6 +294,26 @@ test('booking API', async (suite) => {
       assert.equal((await call(`/bookings/${completed.id}/cancel`, 'POST', {}, admin)).status, 409);
       const history = await (await call('/bookings?status=COMPLETED', 'GET', undefined, user)).json();
       assert.ok(history.total >= 1);
+    });
+    await suite.test('approved bookings get one persistent reminder in the hour before they start', async () => {
+      instant = new Date('2030-01-01T00:00:00Z');
+      const startAt = '2030-01-18T08:30:00Z';
+      const response = await call('/bookings', 'POST', {
+        ...input, resourceId: 'demo-study-room', startAt, endAt: '2030-01-18T09:30:00Z',
+      }, user);
+      assert.equal(response.status, 201);
+      const { booking } = await response.json();
+      assert.equal(booking.status, 'APPROVED');
+
+      instant = new Date('2030-01-18T07:31:00Z');
+      const firstRead = await (await call('/notifications', 'GET', undefined, user)).json();
+      const reminders = firstRead.notifications.filter((notification: { bookingId: string; type: string }) =>
+        notification.bookingId === booking.id && notification.type === 'BOOKING_REMINDER');
+      assert.equal(reminders.length, 1);
+
+      const secondRead = await (await call('/notifications', 'GET', undefined, user)).json();
+      assert.equal(secondRead.notifications.filter((notification: { bookingId: string; type: string }) =>
+        notification.bookingId === booking.id && notification.type === 'BOOKING_REMINDER').length, 1);
     });
   } finally {
     await Promise.all(servers.map((server) => new Promise<void>((resolve) => { server.close(() => resolve()); server.closeAllConnections(); })));
